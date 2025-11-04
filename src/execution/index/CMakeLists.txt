@@ -1,4 +1,5 @@
 add_subdirectory(art)
+add_subdirectory(rmi)
 add_library_unity(
   duckdb_execution_index
   OBJECT
