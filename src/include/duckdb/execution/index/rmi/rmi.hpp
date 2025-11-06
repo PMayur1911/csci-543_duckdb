@@ -9,6 +9,7 @@
 #pragma once
 
 #include "duckdb/execution/index/bound_index.hpp"
+#include "duckdb/src/include/duckdb/execution/index/rmi/rmi_model.hpp"
 
 
 namespace duckdb {
@@ -44,9 +45,11 @@ public:
         // Vector &result depends on how we want to scan to be
 
 public:
-
-    //! Called when data is appended to the index. The lock obtained from InitializeLock must be held
-	ErrorData Append(IndexLock &lock, DataChunk &entries, Vector &row_identifiers) override;
+	//! Try to initialize a scan on the ART with the given expression and filter.
+	unique_ptr<IndexScanState> TryInitializeScan(const Expression &expr, const Expression &filter_expr);
+	//! Perform a lookup on the ART, fetching up to max_count row IDs.
+	//! If all row IDs were fetched, it return true, else false.
+	bool Scan(IndexScanState &state, idx_t max_count, set<row_t> &row_ids);
 
     //! Insert a chunk of entries into the index
 	ErrorData Insert(IndexLock &lock, DataChunk &data, Vector &row_ids) override;
@@ -57,44 +60,24 @@ public:
     //! Deletes all data from the index. The lock obtained from InitializeLock must be held
 	void CommitDrop(IndexLock &index_lock) override;
 
-
-    // CSCI543 - Do we need to adapt this?
     //! Build an RMI Index from a vector of sorted keys and their row IDs.
-	// ARTConflictType Build(unsafe_vector<ARTKey> &keys, unsafe_vector<ARTKey> &row_ids, const idx_t row_count);
+	void Build(Vector &sorted_keys, Vector &sorted_row_ids, const idx_t row_count);
 
+private:
+	bool SearchEqual(double key, idx_t max_count, set<row_t> &row_ids);
+	bool SearchGreater(double key, bool equal, idx_t max_count, set<row_t> &row_ids);
+	bool SearchLess(double key, bool equal, idx_t max_count, set<row_t> &row_ids);
+	bool SearchCloseRange(double key_low, double key_high, bool left_equal, bool right_equal, idx_t max_count,
+	                      set<row_t> &row_ids);
+    
+    // --- Data Members ---
+    unique_ptr<RMIModel> model; // The data-holding object
+    
+    // Pointers to the base table's sorted data
+    // (These are set during the Build() phase)
+    double* base_table_keys; 
+    row_t* base_table_row_ids;
+    idx_t data_size;
 
-    //! Serializes RMI memory to disk and returns the RMI storage information.
-	IndexStorageInfo SerializeToDisk(QueryContext context, const case_insensitive_map_t<Value> &options) override;
-	
-    //! Serializes RMI memory to the WAL and returns the RMI storage information.
-	IndexStorageInfo SerializeToWAL(const case_insensitive_map_t<Value> &options) override;
-
-    //! Returns the in-memory usage of the ART.
-	idx_t GetInMemorySize(IndexLock &index_lock) override;
-
-
-    //! Merge another RMI index into this RMI index. The lock obtained from InitializeLock must be held, and the other
-	//! index must also be locked during the merge
-	bool MergeIndexes(IndexLock &state, BoundIndex &other_index) override;
-
-    //! Traverses an RMI Index and vacuums the qualifying nodes. The lock obtained from InitializeLock must be held
-	void Vacuum(IndexLock &state) override;
-
-
-    //! Verifies the nodes and optionally returns a string of the RMI.
-	string VerifyAndToString(IndexLock &l, const bool only_verify) override;
-
-	//! Verifies that the node allocations match the node counts.
-	void VerifyAllocations(IndexLock &l) override;
-	
-    //! Verifies the index buffers.
-	void VerifyBuffers(IndexLock &l) override;
-
-
-    string GetConstraintViolationMessage(VerifyExistenceType verify_type, idx_t failed_index,
-	                                     DataChunk &input) override {
-		return "Constraint violation in RTree index";
-	}
-
-    };
+};
 } // namespace duckdb
