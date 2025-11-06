@@ -1,4 +1,4 @@
-#include "duckdb/src/include/duckdb/execution/index/rmi/rmi_model.hpp"
+#include "duckdb/execution/index/rmi/rmi_model.hpp"
 #include <limits>
 namespace duckdb {
 

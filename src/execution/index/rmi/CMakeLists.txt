@@ -2,6 +2,7 @@ add_library_unity(
     duckdb_execution_index_rmi
     OBJECT
     rmi.cpp
+    rmi_model.cpp
     rmi_index_create_logical.cpp)
 
 set(ALL_OBJECT_FILES

@@ -9,7 +9,7 @@
 #pragma once
 
 #include "duckdb/execution/index/bound_index.hpp"
-#include "duckdb/src/include/duckdb/execution/index/rmi/rmi_model.hpp"
+#include "duckdb/execution/index/rmi/rmi_model.hpp"
 
 
 namespace duckdb {
@@ -62,6 +62,21 @@ public:
 
     //! Build an RMI Index from a vector of sorted keys and their row IDs.
 	void Build(Vector &sorted_keys, Vector &sorted_row_ids, const idx_t row_count);
+
+    // Append is a wrapper for Insert
+    ErrorData Append(IndexLock &l, DataChunk &chunk, Vector &row_ids) override;
+    
+    // We don't support merging, vacuuming, or constraints
+    bool MergeIndexes(IndexLock &state, BoundIndex &other_index) override;
+    void Vacuum(IndexLock &l) override;
+    string GetConstraintViolationMessage(VerifyExistenceType verify_type, idx_t failed_index, DataChunk &input) override;
+
+    // Simple in-memory size calculation
+    idx_t GetInMemorySize(IndexLock &state) override;
+
+    // Debugging/verification functions (stubs)
+    string VerifyAndToString(IndexLock &l, const bool only_verify) override;
+    void VerifyAllocations(IndexLock &l) override;
 
 private:
 	bool SearchEqual(double key, idx_t max_count, set<row_t> &row_ids);
