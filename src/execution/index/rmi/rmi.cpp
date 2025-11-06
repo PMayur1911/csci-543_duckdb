@@ -4,11 +4,9 @@
 #include "duckdb/planner/expression/bound_between_expression.hpp"
 #include "duckdb/optimizer/matcher/expression_matcher.hpp"
 #include "duckdb/storage/table/scan_state.hpp"
-#include "duckdb/src/include/duckdb/execution/index/rmi/rmi_model.hpp"
+#include "duckdb/execution/index/rmi/rmi_model.hpp"
 #include "duckdb/planner/expression/bound_comparison_expression.hpp"
 #include "duckdb/planner/expression/bound_constant_expression.hpp"
-#include "rmi.hpp"
-
 
 namespace duckdb {
 
@@ -329,6 +327,25 @@ void RMI::Build(Vector &sorted_keys, Vector &sorted_row_ids, const idx_t row_cou
     model->Train(training_data);
 }
 
+ErrorData RMI::Append(IndexLock &l, DataChunk &chunk, Vector &row_ids) {
+	return ErrorData();
+}
+bool RMI::MergeIndexes(IndexLock &state, BoundIndex &other_index) {
+	return false;
+}
+void RMI::Vacuum(IndexLock &l) {
+}
+string RMI::GetConstraintViolationMessage(VerifyExistenceType verify_type, idx_t failed_index, DataChunk &input) {
+	return string();
+}
+idx_t RMI::GetInMemorySize(IndexLock &state) {
+	return idx_t();
+}
+string RMI::VerifyAndToString(IndexLock &l, const bool only_verify) {
+	return string();
+}
+void RMI::VerifyAllocations(IndexLock &l) {
+}
 //===--------------------------------------------------------------------===//
 // Point and range lookups
 //===--------------------------------------------------------------------===//
